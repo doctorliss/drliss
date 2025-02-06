@@ -29,6 +29,11 @@ url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: jekyllrb
 github_username:  jekyll
 
+# For GitHub Pages, use these settings in production
+github:
+  url: "https://doctorliss.github.io"
+  baseurl: "/drliss"
+
 # Build settings
 theme: minima
 plugins:
