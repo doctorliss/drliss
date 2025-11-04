@@ -62,6 +62,151 @@ export default function App() {
     </View>
   );
 }`,
+
+  '/play1/TreeNode.js': `import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { getFileIcon } from './fileIconUtils';
+
+const TreeNode = ({ node, level = 0, onNodeClick, selectedPath }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const hasChildren = node.children && node.children.length > 0;
+  const isSelected = selectedPath === node.path;
+
+  const handlePress = () => {
+    if (hasChildren) {
+      setIsExpanded(!isExpanded);
+    }
+    onNodeClick(node);
+  };
+
+  // Component renders tree node with icon and text
+  return (
+    <TouchableOpacity onPress={handlePress}>
+      <Text>{getFileIcon(node.name, hasChildren, isExpanded)} {node.name}</Text>
+    </TouchableOpacity>
+  );
+};
+
+export default TreeNode;`,
+
+  '/play1/TreeView.js': `import React, { useState } from 'react';
+import TreeNode from './TreeNode';
+import FilePreview from './FilePreview';
+import FileOperations from './FileOperations';
+
+// Main TreeView component that displays file tree with search,
+// sort, preview, and file operations (create, rename, delete)
+
+const TreeView = () => {
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  return (
+    <View>
+      <FileOperations />
+      <TreeNode node={data} onNodeClick={setSelectedNode} />
+      <FilePreview selectedNode={selectedNode} />
+    </View>
+  );
+};
+
+export default TreeView;`,
+
+  '/play1/FileOperations.js': `import React, { useState } from 'react';
+import { View, TouchableOpacity, Text, Modal, TextInput } from 'react-native';
+
+// Component for file operations: Create, Rename, Delete
+// Uses modals for user input and confirmation
+
+const FileOperations = ({ selectedNode, onCreateFile, onRenameFile, onDeleteFile }) => {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  return (
+    <View>
+      <TouchableOpacity onPress={() => setShowCreateModal(true)}>
+        <Text>➕ Create File</Text>
+      </TouchableOpacity>
+      {/* Modal dialogs for file operations */}
+    </View>
+  );
+};
+
+export default FileOperations;`,
+
+  '/play1/FilePreview.js': `import React from 'react';
+import { View, Text, ScrollView } from 'react-native';
+
+// Displays file content preview in split panel
+// Shows placeholder for directories and selected file content
+
+const FilePreview = ({ selectedNode }) => {
+  if (!selectedNode) {
+    return <Text>Select a file to preview</Text>;
+  }
+
+  return (
+    <ScrollView>
+      <Text>{selectedNode.name}</Text>
+      {/* File content display */}
+    </ScrollView>
+  );
+};
+
+export default FilePreview;`,
+
+  '/play1/fileIconUtils.js': `// Utility functions for file type icons
+// Maps file extensions to emoji icons
+
+export const getFileIcon = (fileName, isDirectory, isExpanded) => {
+  if (isDirectory) {
+    return isExpanded ? '📂' : '📁';
+  }
+
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  const iconMap = {
+    js: '📜',
+    json: '📋',
+    html: '🌐',
+    md: '📝',
+    // ... more mappings
+  };
+
+  return iconMap[ext] || '📄';
+};`,
+
+  '/play1/index.js': `import { registerRootComponent } from 'expo';
+import App from './App';
+
+// Entry point for the React Native app
+registerRootComponent(App);`,
+
+  '/play1/app.json': `{
+  "expo": {
+    "name": "file-tree-viewer",
+    "slug": "file-tree-viewer",
+    "version": "1.0.0",
+    "platforms": ["ios", "android", "web"]
+  }
+}`,
+
+  '/play1/README.md': `# File Tree Viewer - React Native
+
+Interactive file tree viewer with features:
+- File type-specific icons
+- Search and filter
+- Sort by name or type
+- File preview panel
+- Create, rename, delete operations
+
+## How to Run
+\`\`\`
+npm install
+npm start
+\`\`\`
+
+Press 'w' for web, 'a' for Android, 'i' for iOS`,
+
+  '/play1/.gitkeep': `# Empty file to keep directory in git`,
 };
 
 const FilePreview = ({ selectedNode }) => {

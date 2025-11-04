@@ -41,8 +41,23 @@ const initialFileSystemData = {
           type: 'file',
         },
         {
-          name: 'package.json',
-          path: '/play1/package.json',
+          name: 'App.js',
+          path: '/play1/App.js',
+          type: 'file',
+        },
+        {
+          name: 'FileOperations.js',
+          path: '/play1/FileOperations.js',
+          type: 'file',
+        },
+        {
+          name: 'FilePreview.js',
+          path: '/play1/FilePreview.js',
+          type: 'file',
+        },
+        {
+          name: 'README.md',
+          path: '/play1/README.md',
           type: 'file',
         },
         {
@@ -56,8 +71,23 @@ const initialFileSystemData = {
           type: 'file',
         },
         {
-          name: 'App.js',
-          path: '/play1/App.js',
+          name: 'app.json',
+          path: '/play1/app.json',
+          type: 'file',
+        },
+        {
+          name: 'fileIconUtils.js',
+          path: '/play1/fileIconUtils.js',
+          type: 'file',
+        },
+        {
+          name: 'index.js',
+          path: '/play1/index.js',
+          type: 'file',
+        },
+        {
+          name: 'package.json',
+          path: '/play1/package.json',
           type: 'file',
         },
       ],
@@ -84,15 +114,21 @@ const TreeView = () => {
     };
 
     setFileSystemData(prevData => {
-      const updatedData = { ...prevData };
+      // Create a deep copy of the data structure
+      const updatedData = JSON.parse(JSON.stringify(prevData));
       const play1Folder = updatedData.children.find(child => child.name === 'play1');
       if (play1Folder) {
-        play1Folder.children = [...play1Folder.children, newFile];
+        play1Folder.children.push(newFile);
       }
       return updatedData;
     });
 
-    Alert.alert('Success', `File "${fileName}" created successfully!`);
+    // Use native alert for web compatibility
+    if (typeof window !== 'undefined') {
+      window.alert(`File "${fileName}" created successfully!`);
+    } else {
+      Alert.alert('Success', `File "${fileName}" created successfully!`);
+    }
   };
 
   // Rename a file
@@ -118,7 +154,13 @@ const TreeView = () => {
 
     setFileSystemData(prevData => renameInTree(prevData));
     setSelectedNode(null);
-    Alert.alert('Success', `File renamed to "${newName}" successfully!`);
+
+    // Use native alert for web compatibility
+    if (typeof window !== 'undefined') {
+      window.alert(`File renamed to "${newName}" successfully!`);
+    } else {
+      Alert.alert('Success', `File renamed to "${newName}" successfully!`);
+    }
   };
 
   // Delete a file
@@ -135,7 +177,13 @@ const TreeView = () => {
 
     setFileSystemData(prevData => deleteFromTree(prevData));
     setSelectedNode(null);
-    Alert.alert('Success', 'File deleted successfully!');
+
+    // Use native alert for web compatibility
+    if (typeof window !== 'undefined') {
+      window.alert('File deleted successfully!');
+    } else {
+      Alert.alert('Success', 'File deleted successfully!');
+    }
   };
 
   // Sort nodes
