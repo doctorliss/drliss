@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { getFileIcon } from './fileIconUtils';
 
 const TreeNode = ({ node, level = 0, onNodeClick, selectedPath }) => {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -14,10 +15,7 @@ const TreeNode = ({ node, level = 0, onNodeClick, selectedPath }) => {
   };
 
   const getIcon = () => {
-    if (!hasChildren) {
-      return '📄 ';
-    }
-    return isExpanded ? '📂 ' : '📁 ';
+    return getFileIcon(node.name, hasChildren, isExpanded) + ' ';
   };
 
   return (

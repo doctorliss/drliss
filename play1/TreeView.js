@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Text } from 'react-native';
+import { View, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import TreeNode from './TreeNode';
+import FilePreview from './FilePreview';
+import FileOperations from './FileOperations';
 
-// File system structure of the repository
-const fileSystemData = {
+// Initial file system structure of the repository
+const initialFileSystemData = {
   name: 'drliss',
   path: '/',
   type: 'directory',
@@ -64,11 +66,138 @@ const fileSystemData = {
 };
 
 const TreeView = () => {
+  const [fileSystemData, setFileSystemData] = useState(initialFileSystemData);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('name'); // 'name' or 'type'
 
   const handleNodeClick = (node) => {
     setSelectedNode(node);
   };
+
+  // Create a new file
+  const handleCreateFile = (fileName, content) => {
+    const newFile = {
+      name: fileName,
+      path: `/play1/${fileName}`,
+      type: 'file',
+    };
+
+    setFileSystemData(prevData => {
+      const updatedData = { ...prevData };
+      const play1Folder = updatedData.children.find(child => child.name === 'play1');
+      if (play1Folder) {
+        play1Folder.children = [...play1Folder.children, newFile];
+      }
+      return updatedData;
+    });
+
+    Alert.alert('Success', `File "${fileName}" created successfully!`);
+  };
+
+  // Rename a file
+  const handleRenameFile = (oldPath, newName) => {
+    const renameInTree = (node) => {
+      if (node.path === oldPath) {
+        const pathParts = oldPath.split('/');
+        pathParts[pathParts.length - 1] = newName;
+        return {
+          ...node,
+          name: newName,
+          path: pathParts.join('/'),
+        };
+      }
+      if (node.children) {
+        return {
+          ...node,
+          children: node.children.map(child => renameInTree(child)),
+        };
+      }
+      return node;
+    };
+
+    setFileSystemData(prevData => renameInTree(prevData));
+    setSelectedNode(null);
+    Alert.alert('Success', `File renamed to "${newName}" successfully!`);
+  };
+
+  // Delete a file
+  const handleDeleteFile = (path) => {
+    const deleteFromTree = (node) => {
+      if (node.children) {
+        return {
+          ...node,
+          children: node.children.filter(child => child.path !== path).map(child => deleteFromTree(child)),
+        };
+      }
+      return node;
+    };
+
+    setFileSystemData(prevData => deleteFromTree(prevData));
+    setSelectedNode(null);
+    Alert.alert('Success', 'File deleted successfully!');
+  };
+
+  // Sort nodes
+  const sortNodes = (nodes) => {
+    if (!nodes) return nodes;
+
+    const sorted = [...nodes].sort((a, b) => {
+      // Directories always come first
+      if (a.children && !b.children) return -1;
+      if (!a.children && b.children) return 1;
+
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === 'type') {
+        const aExt = a.name.split('.').pop() || '';
+        const bExt = b.name.split('.').pop() || '';
+        return aExt.localeCompare(bExt) || a.name.localeCompare(b.name);
+      }
+      return 0;
+    });
+
+    // Recursively sort children
+    return sorted.map(node => ({
+      ...node,
+      children: node.children ? sortNodes(node.children) : undefined
+    }));
+  };
+
+  // Filter tree based on search query
+  const filterTree = (node, query) => {
+    if (!query) return node;
+
+    const lowerQuery = query.toLowerCase();
+
+    // Check if current node matches
+    const nameMatches = node.name.toLowerCase().includes(lowerQuery);
+
+    // If it's a file and matches, return it
+    if (!node.children && nameMatches) {
+      return node;
+    }
+
+    // If it's a directory, recursively filter children
+    if (node.children) {
+      const filteredChildren = node.children
+        .map(child => filterTree(child, query))
+        .filter(child => child !== null);
+
+      // If directory matches or has matching children, return it
+      if (nameMatches || filteredChildren.length > 0) {
+        return {
+          ...node,
+          children: filteredChildren
+        };
+      }
+    }
+
+    return null;
+  };
+
+  const filteredData = filterTree(fileSystemData, searchQuery);
+  const sortedData = filteredData ? { ...filteredData, children: sortNodes(filteredData.children) } : null;
 
   return (
     <View style={styles.container}>
@@ -76,23 +205,72 @@ const TreeView = () => {
         <Text style={styles.headerText}>File System Tree</Text>
       </View>
 
-      <ScrollView style={styles.treeContainer}>
-        <TreeNode
-          node={fileSystemData}
-          onNodeClick={handleNodeClick}
-          selectedPath={selectedNode?.path}
-        />
-      </ScrollView>
+      <FileOperations
+        selectedNode={selectedNode}
+        onCreateFile={handleCreateFile}
+        onRenameFile={handleRenameFile}
+        onDeleteFile={handleDeleteFile}
+      />
 
-      {selectedNode && (
-        <View style={styles.selectedInfoContainer}>
-          <Text style={styles.selectedInfoTitle}>Selected:</Text>
-          <Text style={styles.selectedInfoPath}>{selectedNode.path}</Text>
-          <Text style={styles.selectedInfoType}>
-            Type: {selectedNode.type === 'directory' ? '📂 Directory' : '📄 File'}
-          </Text>
+      <View style={styles.controlsContainer}>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search files..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#999"
+          />
+          {searchQuery.length > 0 && (
+            <Text
+              style={styles.clearButton}
+              onPress={() => setSearchQuery('')}
+            >
+              ✕
+            </Text>
+          )}
         </View>
-      )}
+
+        <View style={styles.sortContainer}>
+          <Text style={styles.sortLabel}>Sort by:</Text>
+          <TouchableOpacity
+            style={[styles.sortButton, sortBy === 'name' && styles.sortButtonActive]}
+            onPress={() => setSortBy('name')}
+          >
+            <Text style={[styles.sortButtonText, sortBy === 'name' && styles.sortButtonTextActive]}>
+              Name
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sortButton, sortBy === 'type' && styles.sortButtonActive]}
+            onPress={() => setSortBy('type')}
+          >
+            <Text style={[styles.sortButtonText, sortBy === 'type' && styles.sortButtonTextActive]}>
+              Type
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.contentContainer}>
+        <View style={styles.treePanel}>
+          <ScrollView style={styles.treeScroll}>
+            {sortedData ? (
+              <TreeNode
+                node={sortedData}
+                onNodeClick={handleNodeClick}
+                selectedPath={selectedNode?.path}
+              />
+            ) : (
+              <Text style={styles.noResults}>No files found matching "{searchQuery}"</Text>
+            )}
+          </ScrollView>
+        </View>
+
+        <View style={styles.previewPanel}>
+          <FilePreview selectedNode={selectedNode} />
+        </View>
+      </View>
     </View>
   );
 };
@@ -111,32 +289,85 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  treeContainer: {
-    flex: 1,
+  controlsContainer: {
     backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 10,
   },
-  selectedInfoContainer: {
-    backgroundColor: '#fff3e0',
-    padding: 15,
-    borderTopWidth: 2,
-    borderTopColor: '#ff9800',
-  },
-  selectedInfoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#e65100',
-    marginBottom: 5,
-  },
-  selectedInfoPath: {
+  searchInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    paddingHorizontal: 10,
     fontSize: 16,
-    color: '#333',
-    marginBottom: 5,
-    fontFamily: 'monospace',
+    backgroundColor: '#f9f9f9',
   },
-  selectedInfoType: {
+  clearButton: {
+    marginLeft: 10,
+    fontSize: 20,
+    color: '#666',
+    fontWeight: 'bold',
+    padding: 5,
+  },
+  sortContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    paddingTop: 0,
+  },
+  sortLabel: {
     fontSize: 14,
     color: '#666',
+    marginRight: 10,
+  },
+  sortButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 5,
+    backgroundColor: '#f0f0f0',
+    marginRight: 8,
+  },
+  sortButtonActive: {
+    backgroundColor: '#1976d2',
+  },
+  sortButtonText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  sortButtonTextActive: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  noResults: {
+    padding: 20,
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 16,
+  },
+  contentContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  treePanel: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRightWidth: 2,
+    borderRightColor: '#ddd',
+  },
+  treeScroll: {
+    flex: 1,
+    padding: 10,
+  },
+  previewPanel: {
+    flex: 1,
+    backgroundColor: '#f9f9f9',
   },
 });
 
