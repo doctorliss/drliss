@@ -2,7 +2,7 @@
   "name": "file-tree-viewer",
   "version": "1.0.0",
   "description": "React Native File Tree Viewer",
-  "main": "App.js",
+  "main": "index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",

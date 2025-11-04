@@ -1,13 +1,12 @@
 import React from 'react';
-import { StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import TreeView from './TreeView';
 
 export default function App() {
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1976d2" />
+    <View style={styles.container}>
       <TreeView />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -15,5 +14,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    height: '100vh',
+    width: '100vw',
   },
 });
